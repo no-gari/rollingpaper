@@ -37,20 +37,20 @@ Windows PowerShell에서는 cp 대신 Copy-Item .env.example .env.local을 사�
 마이그레이션은 파일별 트랜잭션으로 실행하고 schema_migrations에 체크섬을 기록합니다.
 다시 실행하면 적용한 파일은 건너뜁니다. 적용한 SQL을 수정하지 말고 다음 번호의 SQL을 추가하세요.
 동일 DB에 대한 마이그레이션은 한 번에 한 프로세스만 실행합니다.
-빌드/웹 요청에서 자동 마이그레이션하지 않습니다.
+Vercel 배포에서는 vercel.json의 빌드 명령이 마이그레이션을 먼저 실행합니다. 실패하면 배포를 중단합니다. 웹 요청 중에는 마이그레이션하지 않습니다.
 
 ## 3. Vercel 배포
 
 1. no-gari/rollingpaper 저장소를 Import 합니다.
 2. Framework Preset: Next.js, Root Directory: 저장소 루트.
-3. Build Command: npm run build, Output Directory: 기본값.
+3. Build Command와 Output Directory는 기본값을 사용합니다. 저장소의 vercel.json이 DB 마이그레이션 후 Next.js 빌드를 실행합니다. 기존 Build Command Override가 있다면 끄세요.
 4. Node.js 22.x 이상을 선택합니다.
 5. Production에 DATABASE_URL, BOARD_SLUG=jeonghui를 등록합니다.
-6. 대상 Production DB에 npm run db:migrate를 한 번 실행한 후 배포합니다.
+6. 배포합니다. 테이블 생성과 기본 롤링페이퍼 준비는 자동으로 실행되므로 SQL Editor나 터미널 작업이 필요 없습니다.
 7. 편지 작성 후 새 브라우저에서 조회하고 인쇄 미리보기를 확인합니다.
 
 DB 연결 문자열은 NEXT_PUBLIC_ 접두사를 붙이거나 Git에 커밋하지 마세요.
-Neon 연결 정보가 없으면 빌드는 가능하지만 API는 503을 반환합니다.
+Vercel 배포 시 Neon 연결 정보가 없거나 DB 준비에 실패하면 빌드를 중단합니다. Neon을 연결한 후 Redeploy 하면 됩니다. 로컬 npm run build는 DB 없이도 가능합니다.
 이 저장소는 Vercel을 기준으로 전환되었으며 이전 Cloudflare Sites 배포를 갱신하지 않습니다.
 
 ## DB 설계
