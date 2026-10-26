@@ -1,12 +1,120 @@
 'use client';
-import {useEffect,useState} from 'react';
-type Letter={id:string;name:string;body:string;color:string;date:string};
-export default function Page(){
-const [letters,S]=useState<Letter[]>([]),[open,O]=useState(false),[name,N]=useState(''),[body,B]=useState(''),[color,C]=useState('cream'),[busy,Q]=useState(false),[notice,T]=useState(''),[loading,L]=useState(true),[error,E]=useState(''),[query,F]=useState('');
-async function load(){L(true);E('');try{const r=await fetch('/api/letters');if(!r.ok)throw Error();S(await r.json())}catch{E('편지를 불러오지 못했어요. 다시 불러와 주세요.')}finally{L(false)}}
-useEffect(()=>{load();try{const d=JSON.parse(localStorage.getItem('jh-draft')||'{}');N(d.name||'');B(d.body||'')}catch{}},[]);
-function draft(n:string,b:string){try{localStorage.setItem('jh-draft',JSON.stringify({name:n,body:b}))}catch{}}
-async function save(e:React.FormEvent){e.preventDefault();Q(true);try{const r=await fetch('/api/letters',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,body,color})});const d=await r.json();if(!r.ok)throw Error(d.error);S(v=>[d,...v]);B('');draft(name,'');O(false);T('소중한 마음이 전해졌어요. 고맙습니다!')}catch(e:any){T(e.message)}finally{Q(false)}}
-async function share(){try{await navigator.clipboard.writeText(location.origin);T('링크를 복사했어요. 팀원에게 전달해 주세요.')}catch{T('주소창의 링크를 복사해 주세요.')}}
-return <><header><a className="brand" href="/"><i>✳</i> 마음을 모아 <small>OUR LITTLE LETTERS</small></a><nav><button onClick={share}>↗ 링크 복사</button><button onClick={()=>window.print()}>▤ 인쇄 / PDF</button><button className="dark" onClick={()=>O(true)}>편지 쓰기 ＋</button></nav></header><main><section className="hero"><div className="eyebrow">● A LITTLE PAUSE, A LOT OF LOVE</div><div className="hero-inner"><div><p className="to">To. 김정희 책임님</p><h1>잠시, 일 대신<br/><em>사랑으로 채울 시간.</em></h1><p className="intro">새롭게 시작될 정희님의 하루를 응원해요.<br/>함께했던 고마움과 반가운 내일을, 편지 한 장에 담아.</p><button className="dark large" onClick={()=>O(true)}>정희님께 마음 남기기 ↗</button><p className="hint">함께 모이지 못해도, 마음은 함께니까요.</p></div><div className="art" role="img" aria-label="꽃과 마음을 담은 편지 일러스트"><div className="orbit">WITH LOVE, FROM ALL OF US</div><span className="flower">✿</span><div className="envelope"><div className="paper">Dear. 정희님<strong>우리의 마음을<br/>가득 담아서.</strong><span>♡</span></div><div className="fold"/><span className="seal">♥</span></div><span className="spark">✧</span><i className="caption">a new chapter, a beautiful beginning</i></div></div><div className="strip"><span>FOR YOUR NEXT CHAPTER</span><span>육아휴직을 응원하는 우리 팀의 롤링페이퍼</span><span>SCROLL TO READ ↓</span></div></section><section className="collection"><div className="section-title"><div><p className="eyebrow">LETTERS, WITH LOVE</p><h2>차곡차곡 모인 마음 <sup>{letters.length}</sup></h2><p className="hint">짧은 인사도, 못다 한 긴 이야기도 모두 좋아요.</p></div><input className="search" aria-label="편지 검색" placeholder="⌕  이름이나 내용으로 찾기" value={query} onChange={e=>F(e.target.value)}/></div>{loading?<div className="empty">마음을 모으는 중이에요…</div>:error?<div className="empty">{error}<button onClick={load}>다시 불러오기</button></div>:<div className="grid">{letters.filter(l=>(l.name+' '+l.body).includes(query)).map((l,i)=><article className={'letter '+l.color} key={l.id}><div className="letter-top"><span>DEAR. 정희님</span><span>{['✿','♡','✧'][i%3]}</span></div><p className="letter-body">{l.body}</p><div className="signature"><span>From. <b>{l.name}</b></span><time>{new Date(l.date).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'})}</time></div></article>)}{!query?<button className="write-card" onClick={()=>O(true)}><span className="plus">＋</span><strong>{letters.length?'당신의 마음도 더해 주세요':'첫 번째 마음을 남겨 주세요'}</strong><span>시간이 날 때, 편안하게 써 주세요.<br/>긴 편지도 끝까지 담아드릴게요.</span><b>편지 쓰기 ↗</b></button>:!letters.some(l=>(l.name+' '+l.body).includes(query))&&<p>검색한 편지가 없어요.</p>}</div>}</section><aside><span>✳</span><div><strong>화면으로 한 번, 종이로 또 한 번.</strong><p>모인 편지를 A4로 인쇄하거나 PDF로 저장해 정희님께 전해 주세요.</p></div><button onClick={()=>window.print()}>인쇄 준비하기 ↗</button></aside><footer><b>마음을 모아</b><span>정희님의 새로운 일상에, 우리의 따뜻한 응원을 보냅니다.</span><small>MADE WITH ♡, BY OUR TEAM</small></footer></main>{notice&&<div className="toast" role="status">{notice}<button onClick={()=>T('')} aria-label="알림 닫기">×</button></div>}{open&&<div className="overlay" onClick={e=>{if(e.target===e.currentTarget&&!busy)O(false)}}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="title"><button className="close" disabled={busy} onClick={()=>O(false)} aria-label="닫기">×</button><p className="eyebrow">A LETTER FOR JEONGHUI</p><h2 id="title">전하고 싶은 마음을 써 주세요.</h2><p className="hint">김정희 책임님께 · 길어도 괜찮아요. 천천히 담아 주세요.</p><form onSubmit={save}><label>보내는 사람<input autoFocus required maxLength={40} placeholder="이름 또는 별명" value={name} onChange={e=>{N(e.target.value);draft(e.target.value,body)}}/></label><label>편지 내용<textarea required maxLength={10000} placeholder={'정희님, 함께 일할 수 있어 참 감사했어요.\n새로운 일상에서도 행복한 순간이 가득하시길 바라요.'} value={body} onChange={e=>{B(e.target.value);draft(name,e.target.value)}}/></label><p className="counter">{body.length.toLocaleString()} / 10,000자 · 이 기기에 임시 저장</p><div className="form-bottom"><div className="swatches">{['cream','pink','sage'].map(c=><button type="button" key={c} className={c} aria-pressed={c===color} aria-label={c+' 편지지'} onClick={()=>C(c)}>{c===color?'✓':''}</button>)}</div><button className="dark" disabled={busy||!name.trim()||!body.trim()}>{busy?'마음 전하는 중…':'편지 남기기 ↗'}</button></div><p className="hint">남긴 편지는 이 페이지에서 함께 읽고 인쇄할 수 있어요.</p></form></section></div>}</>
+
+import { useEffect, useRef, useState } from 'react';
+
+type Letter = { id: string; name: string; body: string; color: string; date: string };
+const colors = [{id:'cream',name:'노란 편지지'},{id:'pink',name:'분홍 편지지'},{id:'sage',name:'초록 편지지'}];
+const date = (value:string) => new Date(value).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'});
+
+export default function Page() {
+  const [letters,setLetters] = useState<Letter[]>([]);
+  const [mode,setMode] = useState<'write'|'read'|null>(null);
+  const [selected,setSelected] = useState<Letter|null>(null);
+  const [name,setName] = useState('');
+  const [body,setBody] = useState('');
+  const [color,setColor] = useState('cream');
+  const [busy,setBusy] = useState(false);
+  const [notice,setNotice] = useState('');
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState('');
+  const [query,setQuery] = useState('');
+  const dialog = useRef<HTMLDialogElement>(null);
+  const writer = useRef<HTMLTextAreaElement>(null);
+
+  async function load() {
+    setLoading(true);setError('');
+    try {
+      const r=await fetch('/api/letters');
+      const data=await r.json();
+      if(!r.ok) throw new Error(data.error);
+      setLetters(data);
+    } catch(e) {setError(e instanceof Error?e.message:'쪽지를 불러오지 못했어요. 다시 시도해 주세요.')}
+    finally {setLoading(false)}
+  }
+  useEffect(()=>{
+    load();
+    try {
+      const d=JSON.parse(localStorage.getItem('jh-draft')||'{}');
+      setName(d.name||'');setBody(d.body||'');
+      if(colors.some(c=>c.id===d.color))setColor(d.color);
+    } catch {}
+  },[]);
+  useEffect(()=>{
+    if(mode) {dialog.current?.showModal();if(mode==='write')writer.current?.focus()}
+    else dialog.current?.close();
+  },[mode]);
+  function draft(n:string,b:string,c:string) {
+    try{localStorage.setItem('jh-draft',JSON.stringify({name:n,body:b,color:c}))}catch{}
+  }
+  async function save(e:React.FormEvent) {
+    e.preventDefault();setBusy(true);
+    try {
+      const r=await fetch('/api/letters',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,body,color})});
+      const data=await r.json();if(!r.ok)throw new Error(data.error);
+      setLetters(v=>[data,...v]);setBody('');draft(name,'',color);setMode(null);
+      setNotice('정희님께 전할 쪽지를 붙였어요 ♡');
+    } catch(e){setNotice(e instanceof Error?e.message:'저장하지 못했어요. 다시 시도해 주세요.')}
+    finally{setBusy(false)}
+  }
+  async function share() {
+    try{await navigator.clipboard.writeText(location.origin);setNotice('링크를 복사했어요. 팀원들에게 보내 주세요.')}
+    catch{setNotice('주소창의 링크를 복사해 주세요.')}
+  }
+  const visible=letters.filter(l=>(l.name+' '+l.body).includes(query));
+  return <>
+    <header className="topbar">
+      <a href="/" className="brand"><span>✿</span> 우리의 롤링페이퍼</a>
+      <div className="top-actions"><button onClick={share}>↗ 링크 공유</button><button onClick={()=>window.print()}>▤ 인쇄 · PDF</button></div>
+    </header>
+    <main>
+      <div className="board-toolbar">
+        <div className="people"><span>♡</span> 함께 쓴 마음 <b>{letters.length}</b></div>
+        <label className="search"><span>⌕</span><input aria-label="쪽지 검색" placeholder="이름 · 내용 찾기" value={query} onChange={e=>setQuery(e.target.value)}/>{query&&<button aria-label="검색 지우기" onClick={()=>setQuery('')}>×</button>}</label>
+      </div>
+      <section className="rolling-board" aria-label="김정희 책임님 롤링페이퍼">
+        <div className="board-heading">
+          <span className="heading-sticker" aria-hidden="true">✿</span>
+          <span className="occasion">우리 팀이 함께 쓰는 응원의 한 장</span>
+          <h1><span>To.</span> 김정희 책임님</h1>
+          <p>새로운 일상도, 반짝이는 매일도 응원해요!</p>
+          <div className="heading-doodle" aria-hidden="true">♡</div>
+        </div>
+        {loading?<div className="board-state">쪽지를 모으는 중이에요…</div>:error?
+          <div className="board-state error"><p>{error}</p><button onClick={load}>다시 불러오기 ↻</button><small>작성 중인 쪽지는 이 기기에 임시 저장돼요.</small></div>:
+          <div className="notes">
+            {visible.map((letter,i)=><article key={letter.id} className={'note '+letter.color}>
+              <span className="tape" aria-hidden="true"/>
+              <button className="note-open" aria-label={letter.name+'님의 쪽지 전체 읽기'} onClick={()=>{setSelected(letter);setMode('read')}}>
+                <span className="note-to">정희님께 <span aria-hidden="true">{['♡','✿','✧'][i%3]}</span></span>
+                <span className="note-body">{letter.body}</span>
+                <span className="note-bottom"><span>From. <b>{letter.name}</b></span><span className="read-more">펼쳐 읽기 ↗</span></span>
+              </button>
+            </article>)}
+            {!query&&<button className="add-note" onClick={()=>setMode('write')}><span>＋</span><strong>{letters.length?'내 쪽지도 붙이기':'첫 쪽지를 붙여 주세요'}</strong><p>고마웠던 순간, 응원하는 마음.<br/>길게 써도 괜찮아요.</p><small>눌러서 쪽지 쓰기 ↗</small></button>}
+            {query&&!visible.length&&<div className="board-state">찾는 쪽지가 없어요.</div>}
+          </div>}
+        {!loading&&!error&&!letters.length&&<div className="empty-doodles" aria-hidden="true"><span>우리의 마음이<br/>모일 자리!</span><i>⤴</i><b>✧</b></div>}
+        <div className="board-signoff">정희님의 새로운 챕터에, 우리 팀 드림 <span>♡</span></div>
+      </section>
+      <p className="board-help">쪽지를 누르면 긴 편지도 끝까지 읽을 수 있어요. <span>인쇄할 때는 모든 쪽지의 전문이 나옵니다.</span></p>
+    </main>
+    <div className="floating-actions"><button className="refresh" aria-label="새 쪽지 불러오기" onClick={load} disabled={loading}>↻</button><button className="write-button" onClick={()=>setMode('write')}><span>✎</span> 쪽지 쓰기</button></div>
+    <dialog ref={dialog} className={'paper-dialog '+(mode==='read'?'reading':'')} onCancel={e=>{if(busy)e.preventDefault();else setMode(null)}} onClose={()=>setMode(null)} onClick={e=>{if(e.target===e.currentTarget&&!busy)setMode(null)}}>
+      {mode==='write'&&<div className="dialog-content">
+        <div className="dialog-heading"><div><small>정희님 롤링페이퍼</small><h2>마음을 담아, 쪽지 한 장</h2></div><button className="close" disabled={busy} aria-label="작성창 닫기" onClick={()=>setMode(null)}>×</button></div>
+        <form onSubmit={save}>
+          <div className={'writing-paper '+color}>
+            <span className="note-to">To. 김정희 책임님 <span>♡</span></span>
+            <label className="sr-only" htmlFor="message">쪽지 내용</label>
+            <textarea id="message" ref={writer} required maxLength={10000} placeholder={'정희님께 전하고 싶은 이야기를 써 주세요.\n함께했던 추억도, 응원도 좋아요.\n\n긴 편지도 최대 1만 자까지 담을 수 있어요.'} value={body} onChange={e=>{setBody(e.target.value);draft(name,e.target.value,color)}}/>
+            <label className="from">From. <input required maxLength={40} placeholder="보내는 사람" aria-label="보내는 사람" value={name} onChange={e=>{setName(e.target.value);draft(e.target.value,body,color)}}/></label>
+          </div>
+          <div className="paper-controls"><div className="swatches" aria-label="편지지 색상">{colors.map(c=><button type="button" key={c.id} className={c.id} aria-label={c.name} aria-pressed={color===c.id} onClick={()=>{setColor(c.id);draft(name,body,c.id)}}>{color===c.id?'✓':''}</button>)}</div><span>{body.length.toLocaleString()} / 10,000자</span></div>
+          <div className="submit-row"><span>작성 중인 내용은 이 기기에 임시 저장돼요.</span><button className="write-button" disabled={busy||!name.trim()||!body.trim()}>{busy?'쪽지 붙이는 중…':'롤링페이퍼에 붙이기 ↗'}</button></div>
+        </form>
+      </div>}
+      {mode==='read'&&selected&&<div className={'reading-paper '+selected.color}><button className="close" aria-label="쪽지 닫기" onClick={()=>setMode(null)}>×</button><span className="note-to">To. 김정희 책임님 <span>♡</span></span><p className="full-letter">{selected.body}</p><div className="reading-signature"><b>From. {selected.name}</b><time>{date(selected.date)}</time></div></div>}
+    </dialog>
+    {notice&&<div className="toast" role="status">{notice}<button aria-label="알림 닫기" onClick={()=>setNotice('')}>×</button></div>}
+  </>;
 }
