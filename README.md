@@ -1,133 +1,104 @@
-# vinext-starter
+# 정희님께, 마음을 모아
 
-A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
+김정희 책임님의 육아휴직을 응원하는 팀 롤링페이퍼.
+**Next.js App Router + Neon PostgreSQL + Vercel** 구성입니다.
+긴 편지(최대 1만 자), 편지지 색상, 기기 내 초안 저장, 검색, A4 인쇄/PDF를 지원합니다.
 
-## Prerequisites
+## 1. Neon 준비
 
-- Node.js `>=22.13.0`
-- Portable: Windows, macOS, or Linux; no Bash required
-- Managed Linux: managed Linux runtime with Bash, `flock`, `curl`, `sha256sum`, and GNU `timeout`
-- Git and `tar` (including Windows `tar.exe`) are required for publishing; portable publication does not require Bash
+1. Neon에서 프로젝트/데이터베이스를 만듭니다.
+2. Connect에서 Node.js 연결 문자열을 복사합니다. SSL 옵션을 유지하세요.
+3. 아래 환경변수를 로컬의 .env.local 또는 Vercel 프로젝트에 등록합니다.
+   연결 문자열은 서버에서만 사용하며 브라우저로 전달하지 않습니다.
 
-## Sites Lifecycle
-
-The Sites initializer copies the shared starter and selects managed-linux only when `SITES_MANAGED_LINUX_CONTAINER=1`; otherwise it selects portable. It saves the selection only in ignored `.sites-runtime/execution-profile.json`. Both profiles copy/configure first, then use the plugin's separate `install-dependencies.mjs` step to measure installation independently. Edit source under `app/` and follow the Sites skill for installation, preview, builds, and publishing.
-
-Run `node <plugin-root>/scripts/configure-execution-profile.mjs` only when the profile is unknown for the current checkout and environment. Profile changes do not alter tracked source or require reinstalling otherwise-valid dependencies; restart an existing preview to use the new selection. Do not commit or upload `.sites-runtime/`.
-
-This starter does not use `wrangler.jsonc`.
-
-Publish archives outside the source checkout or under its ignored `outputs/` directory. Local `.env*`, `.dev.vars*`, TypeScript build state, and tool runtime directories are ignored; keep the hosting manifest, migrations, and authored scripts in source control.
-
-`install:ci` runs `npm ci` once against the shared lockfile, disables parent-workspace discovery, and includes required dev/optional dependencies despite production/omit settings. Sharp defaults to prebuilt binaries unless explicitly configured otherwise. Do not overlap installers.
-
-- **Portable:** Preserve host HOME, npm cache, registry, proxy, temporary paths, retry/concurrency settings, and lifecycle-script policy. Use `--prefer-offline --no-audit --no-fund`.
-- **Managed Linux:** Use the existing project-local HOME/cache/tmp setup and Linux install lock, tarball preflight, and timeout. Restore the image-seeded npm cache only when its lockfile hash matches; retain network fallback. Builds keep their existing timeout. These helpers are not invoked by the portable profile.
-
-`scripts/sites-env.mjs` preserves the caller's HOME, npm cache, proxy, XDG, and temporary-directory configuration while defaulting Wrangler and Miniflare state to the checkout. If npm reports an unwritable cache, select a writable path with `npm_config_cache` for that install. The `dev` and `start` scripts also keep Wrangler logs inside the checkout. Generated `.sites-runtime/` and `.wrangler/` directories are disposable and ignored by Git.
-
-On portable, `npm run dev` uses `vinext dev` with HMR, starting at port 5173. Vinext records the running server in ignored `.vinext/` state, rejects an ordinary duplicate launch, and recovers stale state after a stopped process; exactly simultaneous starts can race. Pass `--port <port>` or `--hostname <host>` after `npm run dev --` when needed; keep portable previews on loopback.
-
-For managed Linux browser QA, follow the Sites skill's managed preview reference. The daemon runs the project's Vite dev script with `--host 0.0.0.0 --port 4173 --strictPort`; use the CLI's returned URL. The ignored local profile survives the daemon's cleared environment.
-
-The portable profile simulates ChatGPT sign-in only for loopback development requests. Visit `/signin-with-chatgpt?return_to=/` to sign in as `local_seedy` (`seedy@sites.test`, display name `Seedy`) and `/signout-with-chatgpt?return_to=/` to sign out. The development cookie preserves that identity across server restarts. Mock auth is disabled in the managed-linux profile and is not included in production builds; hosted authentication remains dispatch-owned.
-
-The Worker uses `vinext/server/fetch-handler`, including Vinext's config-aware image handling. After building, `npm start` runs that Worker locally through Wrangler on `127.0.0.1`, sharing `.wrangler/state` with dev preview and local D1 migrations; it does not deploy the site or simulate sign-in. Use the URL printed by the server. Pass `npm start -- --port <port>` to select a different built-preview port.
-
-Local previews use Miniflare's placeholder `Request.cf` metadata without a network lookup. Set `CLOUDFLARE_CF_FETCH_ENABLED=true` to opt into fetching preview metadata; this setting does not change hosted request metadata.
-
-Local tool usage metrics are disabled by default. Set `WRANGLER_SEND_METRICS=true` to opt in.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `worker/index.ts` is the production Worker entrypoint and preserves request-scoped connector bindings
-- `scripts/vite/` contains the maintained Vite integrations and the vendored Sites plugin license
-- `scripts/connector-preview/` contains the local connector preview Worker and session helpers
-- the remaining `scripts/` files select execution profiles and run installation, development, and builds; the plugin's helpers orchestrate the Sites lifecycle
-- `dist/` contains generated deployment output; `.vinext/`, `.wrangler/`, and `.sites-runtime/` contain ignored local tool state
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `@cloudflare/workers-types` provides Worker types; `cloudflare-env.d.ts` declares optional `DB`/`BUCKET` bindings—update these declarations if binding names change
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Use it as the durable user key; use email and name for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive `oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty `name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by `oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```dotenv
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
+BOARD_SLUG=jeonghui
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+Neon Vercel Marketplace 연동을 사용한다면 주입된 DATABASE_URL을 사용하면 됩니다.
+Preview 배포에는 별도 Neon 개발 브랜치 연결을 권장합니다.
+무료 플랜의 현재 사용량/제한은 Neon 대시보드에서 확인하세요.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs optional or required ChatGPT sign-in:
+## 2. DB 초기화
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use the returned `userId` as the stable user key for user-owned records; do not use email as a durable identifier.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send anonymous visitors through Sign in with ChatGPT.
-- In a Server Component, start sign-in with `<a href={chatGPTSignInPath(returnTo)} target="_top">`. The auth helper module is server-only; do not import it into a Client Component.
-- Do not use `fetch`, XHR, a client-side router, or a framework link that can prefetch the sign-in route. SIWC must start as a top-level navigation.
-- Never request the AuthAPI authorization endpoint directly. The dispatch-owned `/signin-with-chatgpt` route must start the SIWC flow.
-- Use `chatGPTSignOutPath(returnTo)` for browser sign-out links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the OAuth cookies, and identity header injection. Do not implement app routes for those reserved paths. Routes that do not import and call the helper remain anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the Sites hosting platform's access policy controls for workspace-wide restrictions, or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Local D1 migrations
-
-For a D1-backed local preview, generate SQL with `npm run db:generate`. Build once through the Sites skill's build entrypoint (or `npm run build` for standalone use) to generate `dist/server/wrangler.json`, rebuilding if bindings change. From the project root, apply each pending migration in order:
+Node.js 22.13 이상에서:
 
 ```sh
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_example.sql
+npm ci
+cp .env.example .env.local
+# .env.local의 DATABASE_URL을 실제 값으로 변경
+npm run db:migrate
+npm run dev
 ```
 
-Replace the filename with the pending migration and `DB` with your D1 binding name if different. Use `.wrangler/state`, not `.wrangler/state/v3`; Wrangler adds the versioned directories. Do not replay migrations already applied locally. This updates only the preview database; publishing applies production migrations separately.
+Windows PowerShell에서는 cp 대신 Copy-Item .env.example .env.local을 사용할 수 있습니다.
 
-## Diagnostic Commands
+마이그레이션은 파일별 트랜잭션으로 실행하고 schema_migrations에 체크섬을 기록합니다.
+다시 실행하면 적용한 파일은 건너뜁니다. 적용한 SQL을 수정하지 말고 다음 번호의 SQL을 추가하세요.
+동일 DB에 대한 마이그레이션은 한 번에 한 프로세스만 실행합니다.
+빌드/웹 요청에서 자동 마이그레이션하지 않습니다.
 
-- `npm run install:ci`: perform the one locked dependency install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build the deployable Sites artifact
-- `npm run start`: preview the built Worker locally with D1/R2 support
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+## 3. Vercel 배포
 
-When using the Sites plugin, follow its skill instructions for installation, builds, and publishing. These npm commands remain available for standalone use.
+1. no-gari/rollingpaper 저장소를 Import 합니다.
+2. Framework Preset: Next.js, Root Directory: 저장소 루트.
+3. Build Command: npm run build, Output Directory: 기본값.
+4. Node.js 22.x 이상을 선택합니다.
+5. Production에 DATABASE_URL, BOARD_SLUG=jeonghui를 등록합니다.
+6. 대상 Production DB에 npm run db:migrate를 한 번 실행한 후 배포합니다.
+7. 편지 작성 후 새 브라우저에서 조회하고 인쇄 미리보기를 확인합니다.
 
-The portable build runs Vinext directly without a host `timeout` command. The managed-linux build uses `scripts/build-verified.sh` and its existing `SITES_BUILD_TIMEOUT` setting.
+DB 연결 문자열은 NEXT_PUBLIC_ 접두사를 붙이거나 Git에 커밋하지 마세요.
+Neon 연결 정보가 없으면 빌드는 가능하지만 API는 503을 반환합니다.
+이 저장소는 Vercel을 기준으로 전환되었으며 이전 Cloudflare Sites 배포를 갱신하지 않습니다.
 
-## Learn More
+## DB 설계
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+| 테이블 | 필드 | 목적 |
+| --- | --- | --- |
+| boards | id (UUID PK), slug (UNIQUE), recipient_name, title, accepting_letters, created_at | 롤링페이퍼와 작성 마감 상태 |
+| letters | id (UUID PK), board_id (FK), author_name, body, paper_color, created_at | 편지 본문과 표시 정보 |
+| schema_migrations | name (PK), checksum, applied_at | 적용한 SQL 기록 |
+
+boards 1 : N letters.
+작성자명 1~40자, 본문 1~10,000자, 색상 cream/pink/sage는 DB CHECK로 검증합니다.
+board_id 외래키는 편지가 있는 롤링페이퍼의 실수 삭제를 막습니다.
+letters(board_id, created_at DESC, id DESC) 인덱스로 롤링페이퍼별 최신순 조회를 처리합니다.
+시간은 timestamptz(UTC)로 저장하고 화면에는 한국 시간으로 표시합니다.
+SQL은 파라미터 바인딩을 사용하며 Neon HTTP 드라이버로 서버에서만 실행합니다.
+
+현재 화면의 수신인/제목은 정희님용으로 고정입니다. 다른 보드로 재사용할 때는
+DB의 보드 추가 및 BOARD_SLUG 변경과 함께 화면 문구도 변경하세요.
+
+### 작성 마감
+
+Neon SQL Editor에서 실행합니다. 이미 받은 편지는 계속 조회/인쇄됩니다.
+
+```sql
+UPDATE boards SET accepting_letters = false WHERE slug = 'jeonghui';
+```
+
+재개는 false를 true로 바꾸면 됩니다.
+현재 API는 로그인 없이 해당 페이지를 방문한 사람이 읽고 작성하는 구조입니다.
+Vercel 배포 URL이 공개되어 있다면 링크를 받은 사람이 다른 사람에게 전달할 수도 있습니다.
+팀 전용 접근이 필요하면 별도 인증 또는 배포 접근 제한을 구성해야 합니다.
+편지 수정/삭제 API는 제공하지 않습니다. 필요한 정리는 DB 관리자가 수행합니다.
+초안은 브라우저 localStorage에만 있으며 최종 제출된 편지만 DB에 저장됩니다.
+
+## 확인
+
+```sh
+npm run test:db
+npm run build
+```
+
+test:db는 PGlite의 실제 PostgreSQL 엔진으로 테이블 생성, 1만 자 저장, 길이/색상/외래키 제약,
+롤링페이퍼 간 분리, 따옴표 입력, 작성 마감, 보드 삭제 방지를 검증합니다.
+Neon 원격 접속 검증은 실제 DATABASE_URL 등록 후 별도로 수행해야 합니다.
+
+이전 R2에 저장된 편지는 자동 이관되지 않습니다.
+이전 사이트에서 실제 편지를 수집했다면 Neon으로 전환하기 전에 내보내기/이관이 필요합니다.
+
+참고: https://neon.com/docs/serverless/serverless-driver
+참고: https://vercel.com/marketplace/neon/neon

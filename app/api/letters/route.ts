@@ -1,3 +1,51 @@
-import {env} from 'cloudflare:workers';
-export async function GET(){try{const b=(env as any).BUCKET;let cursor;const objects:any[]=[];do{const p=await b.list({prefix:'letters/',cursor});objects.push(...p.objects);cursor=p.truncated?p.cursor:undefined}while(cursor);const letters=await Promise.all(objects.map(async o=>(await b.get(o.key))?.json()));return Response.json(letters.filter(Boolean).sort((a:any,b:any)=>b.date.localeCompare(a.date)),{headers:{'Cache-Control':'no-store'}})}catch{return Response.json({error:'불러오지 못했어요.'},{status:500})}}
-export async function POST(r:Request){try{const d=await r.json() as any;if(typeof d.name!=='string'||!d.name.trim()||d.name.length>40||typeof d.body!=='string'||!d.body.trim()||d.body.length>10000)return Response.json({error:'이름과 내용을 확인해 주세요.'},{status:400});const l={id:crypto.randomUUID(),name:d.name.trim(),body:d.body.trim(),color:['cream','pink','sage'].includes(d.color)?d.color:'cream',date:new Date().toISOString()};await (env as any).BUCKET.put('letters/'+l.id+'.json',JSON.stringify(l));return Response.json(l)}catch{return Response.json({error:'저장하지 못했어요. 다시 시도해 주세요.'},{status:500})}}
+import { boardSlug, getSql } from '@/db';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  try {
+    const sql = getSql();
+    const rows = await sql`
+      SELECT l.id, l.author_name AS name, l.body, l.paper_color AS color, l.created_at AS date
+      FROM letters l JOIN boards b ON b.id = l.board_id
+      WHERE b.slug = ${boardSlug()}
+      ORDER BY l.created_at DESC, l.id DESC
+    `;
+    return Response.json(rows, { headers: { 'Cache-Control': 'no-store' } });
+  } catch {
+    return Response.json({ error: '편지를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.' }, { status: 503 });
+  }
+}
+
+export async function POST(request: Request) {
+  if (request.headers.get('origin') && request.headers.get('origin') !== new URL(request.url).origin)
+    return Response.json({error:'이 페이지에서 다시 작성해 주세요.'}, {status:403});
+  let data: unknown;
+  try {
+    const text = await request.text();
+    if (new TextEncoder().encode(text).byteLength > 64000)
+      return Response.json({error:'편지 내용이 너무 길어요.'}, {status:413});
+    data = JSON.parse(text);
+  } catch { return Response.json({error:'올바른 편지 내용을 보내 주세요.'}, {status:400}); }
+  if (!data || typeof data !== 'object')
+    return Response.json({error:'이름과 내용을 확인해 주세요.'}, {status:400});
+  const {name, body, color} = data as Record<string, unknown>;
+  if (typeof name !== 'string' || !name.trim() || name.length > 40 ||
+      typeof body !== 'string' || !body.trim() || body.length > 10000 ||
+      (color !== undefined && (typeof color !== 'string' || !['cream','pink','sage'].includes(color))))
+    return Response.json({error:'이름은 40자, 편지는 1만 자 이내로 작성해 주세요.'}, {status:400});
+  try {
+    const sql = getSql();
+    // Check writing status and insert in one database statement.
+    const rows = await sql`
+      INSERT INTO letters (board_id, author_name, body, paper_color)
+      SELECT id, ${name.trim()}, ${body.trim()}, ${color || 'cream'}
+      FROM boards WHERE slug = ${boardSlug()} AND accepting_letters = true
+      RETURNING id, author_name AS name, body, paper_color AS color, created_at AS date
+    `;
+    if (!rows.length) return Response.json({error:'편지 작성이 마감되었거나 롤링페이퍼가 없어요.'}, {status:409});
+    return Response.json(rows[0], {status:201});
+  } catch {
+    return Response.json({error:'저장하지 못했어요. 작성한 글은 그대로 있으니 다시 시도해 주세요.'}, {status:503});
+  }
+}
