@@ -1,4 +1,5 @@
 import { boardSlug, getSql } from '@/db';
+import { databaseFailure } from '@/db/errors';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +13,7 @@ export async function GET() {
       ORDER BY l.created_at DESC, l.id DESC
     `;
     return Response.json(rows, { headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return Response.json({ error: '편지를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.' }, { status: 503 });
-  }
+  } catch (error) { return databaseFailure(error, 'load'); }
 }
 
 export async function POST(request: Request) {
@@ -45,7 +44,5 @@ export async function POST(request: Request) {
     `;
     if (!rows.length) return Response.json({error:'편지 작성이 마감되었거나 롤링페이퍼가 없어요.'}, {status:409});
     return Response.json(rows[0], {status:201});
-  } catch {
-    return Response.json({error:'저장하지 못했어요. 작성한 글은 그대로 있으니 다시 시도해 주세요.'}, {status:503});
-  }
+  } catch (error) { return databaseFailure(error, 'save'); }
 }
