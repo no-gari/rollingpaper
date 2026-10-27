@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PrintBoard from './print-board';
 
 type Letter = { id: string; name?: string; body?: string; color: string; date: string };
 const colors = [{id:'cream',name:'노란 편지지'},{id:'pink',name:'분홍 편지지'},{id:'sage',name:'초록 편지지'}];
 const date = (value:string) => new Date(value).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'});
 
 export default function Board({result=false}:{result?:boolean}) {
+  const [printReady,setPrintReady]=useState(false);
+  const printingReady=useCallback(()=>setPrintReady(true),[]);
   const [letters,setLetters] = useState<Letter[]>([]);
   const [mode,setMode] = useState<'write'|'read'|null>(null);
   const [selected,setSelected] = useState<Letter|null>(null);
@@ -62,9 +65,10 @@ export default function Board({result=false}:{result?:boolean}) {
   }
   const visible=letters.filter(l=>((l.name||'')+' '+(l.body||'')).includes(query));
   return <>
+    {result&&<PrintBoard letters={letters} onReady={printingReady}/>}
     <header className="topbar">
       <a href="/" className="brand"><span>✿</span> 우리의 롤링페이퍼</a>
-      <div className="top-actions"><button onClick={share}>↗ 링크 공유</button>{result&&<button onClick={()=>window.print()}>▤ 인쇄 · PDF</button>}</div>
+      <div className="top-actions"><button onClick={share}>↗ 링크 공유</button>{result&&<button disabled={loading||!printReady} onClick={()=>window.print()}>▤ 인쇄 · PDF</button>}</div>
     </header>
     <main>
       <div className="board-toolbar">

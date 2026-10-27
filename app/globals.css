@@ -35,3 +35,32 @@
  .note:nth-child(3n+2) .tape{background:#d3d5b9bb!important}.note:nth-child(3n) .tape{background:#e5c5b9bb!important}
  .board-signoff{position:static;margin-top:5mm;font-size:12pt;break-inside:avoid}
 }
+
+/* Measure and paginate notes before printing, so covers and signoffs never become empty pages. */
+.print-sheets{display:none}
+.print-measure{position:fixed;left:-10000px;top:0;width:calc((277mm - 12mm - 14mm - 2px)/3);visibility:hidden;pointer-events:none}
+.print-card{position:relative;padding:4mm 4mm 3mm;border:1px solid #a3967333;border-radius:1px;box-shadow:1mm 1mm 2mm #58472820;font-family:'Gaegu',cursive;color:#484238;box-sizing:border-box}
+.print-card-to{font-family:'Noto Sans KR',sans-serif;font-size:8pt;line-height:1.4;color:#8f806a}
+.print-card p{font-family:'Gaegu',cursive;font-size:11.5pt;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:3mm 0}
+.print-card-from{font-family:'Gaegu',cursive;font-size:11.5pt;line-height:1.4;padding-top:2mm;border-top:1px solid #80725526;overflow-wrap:anywhere}
+@media print{
+
+ /* Next.js may wrap client output: hide the old board, not its layout ancestor. */
+ body:has(.print-sheets) .topbar,body:has(.print-sheets) main,body:has(.print-sheets) .floating-actions,body:has(.print-sheets) dialog,body:has(.print-sheets) .toast{display:none!important}
+ body:has(.print-sheets){background:white}
+ .print-sheets{display:block!important}
+ .print-measure{display:none!important}
+ .print-sheet{width:277mm;height:190mm;box-sizing:border-box;padding:6mm;display:flex;flex-direction:column;gap:3mm;background-color:#fffdf8;background-image:radial-gradient(#cfc3ad80 .35mm,transparent .35mm);background-size:5mm 5mm;border:1px solid #e2d8c6;border-radius:3mm;break-after:page;overflow:visible}
+ .print-sheet:last-child{break-after:auto}
+ .print-sheet-heading{height:20mm;flex:none;display:flex;align-items:center;justify-content:center;gap:12mm;text-align:center}
+ .print-sheet-heading>span{font-family:'Gaegu',cursive;font-size:35pt;color:#c5a7d2}.print-sheet-heading>span:last-child{color:#d6a1a1}
+ .print-sheet-heading small{font-size:7pt;color:#9d9085}
+ .print-sheet-heading h2{font-family:'Gaegu',cursive;font-size:23pt;line-height:1.1;margin:1mm 0;font-weight:700}
+ .print-sheet-heading p{font-family:'Gaegu',cursive;font-size:11pt;margin:0;color:#898374}
+ .print-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7mm;height:148mm;flex:none;align-items:start}
+ .print-column{display:flex;flex-direction:column;gap:6mm;min-width:0}
+ .print-card{break-inside:avoid;flex:none}
+ .print-tape{position:absolute;top:-2mm;width:18mm;height:4mm;left:calc(50% - 9mm);background:#d4c4ddaa;transform:rotate(-3deg)}
+ .print-column:nth-child(2) .print-tape{background:#d3d5b9bb;transform:rotate(3deg)}.print-column:nth-child(3) .print-tape{background:#e5c5b9bb}
+ .print-sheet-footer{height:3mm;margin:0;padding:0;display:flex;justify-content:space-between;align-items:center;font-family:'Gaegu',cursive;font-size:10pt;color:#aa9988;flex:none}
+}
