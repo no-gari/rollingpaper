@@ -89,6 +89,7 @@ export default function Board({result=false}:{result?:boolean}) {
                 <span className={'note-body'+(!result?' blurred-placeholder':'')} aria-hidden={!result}>{result?letter.body:'정희님께 전하고 싶은 마음을 담았습니다. 함께한 소중한 순간들을 기억하며 새로운 일상을 응원합니다. 고마운 마음을 쪽지에 가득 담아 전합니다.'}</span>{!result&&<span className='sealed-label'>♡ 정희님께만 전하는 마음</span>}
                 <span className="note-bottom"><span>{result?<>From. <b>{letter.name}</b></>:'전달 완료'}</span>{result&&<span className='read-more'>펼쳐 읽기 ↗</span>}</span>
               </button>
+              <div className="print-note-content"><span className="note-to">정희님께 <span>♡</span></span><p className="note-body">{result?letter.body:"정희님께 전달된 비공개 쪽지입니다."}</p><div className="note-bottom">{result?<>From. <b>{letter.name}</b></>:"전달 완료"}</div></div>
             </article>)}
             {!result&&!query&&<button className="add-note" onClick={()=>setMode('write')}><span>＋</span><strong>{letters.length?'내 쪽지도 붙이기':'첫 쪽지를 붙여 주세요'}</strong><p>고마웠던 순간, 응원하는 마음.<br/>길게 써도 괜찮아요.</p><small>눌러서 쪽지 쓰기 ↗</small></button>}
             {query&&!visible.length&&<div className="board-state">찾는 쪽지가 없어요.</div>}
