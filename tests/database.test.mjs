@@ -28,3 +28,21 @@ test('PostgreSQL schema, long letters, constraints, board isolation and closed c
  await assert.rejects(()=>db.query('DELETE FROM boards WHERE id=$1',[board]));
  } finally { await db.close(); }
 });
+
+test('management updates and deletes are scoped to the selected board',async()=>{
+ const db=new PGlite();
+ try{
+  await db.exec(migration);
+  const own=(await db.query("INSERT INTO letters(board_id,author_name,body) SELECT id,'팀원','원본' FROM boards WHERE slug='jeonghui' RETURNING id")).rows[0].id;
+  const other=(await db.query("INSERT INTO boards(slug,recipient_name,title) VALUES('other','다른 분','다른 보드') RETURNING id")).rows[0].id;
+  const foreign=(await db.query("INSERT INTO letters(board_id,author_name,body) VALUES($1,'다른 팀원','유지할 내용') RETURNING id",[other])).rows[0].id;
+  const update=(id,body)=>db.query("UPDATE letters SET author_name=$1,body=$2,paper_color=$3 WHERE id=$4 AND board_id IN(SELECT id FROM boards WHERE slug=$5) RETURNING id,body",['수정된 이름',body,'pink',id,'jeonghui']);
+  assert.equal((await update(foreign,'바뀌면 안 됨')).rows.length,0);
+  assert.equal((await update(own,'수정한 긴 편지')).rows[0].body,'수정한 긴 편지');
+  const remove=id=>db.query('DELETE FROM letters WHERE id=$1 AND board_id IN(SELECT id FROM boards WHERE slug=$2) RETURNING id',[id,'jeonghui']);
+  assert.equal((await remove(foreign)).rows.length,0);
+  assert.equal((await remove(own)).rows[0].id,own);
+  assert.equal((await remove(own)).rows.length,0);
+  assert.equal((await db.query('SELECT body FROM letters WHERE id=$1',[foreign])).rows[0].body,'유지할 내용');
+ }finally{await db.close()}
+});
