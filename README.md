@@ -102,3 +102,11 @@ Neon 원격 접속 검증은 실제 DATABASE_URL 등록 후 별도로 수행해�
 
 참고: https://neon.com/docs/serverless/serverless-driver
 참고: https://vercel.com/marketplace/neon/neon
+
+## 작성 화면과 결과 화면
+
+- / : 쪽지 작성과 전달 현황. 공개 조회 및 제출 응답은 ID/색상/날짜만 포함합니다.
+- /result : 작성자/전체 본문 조회 및 인쇄. 기본 화면에는 이 경로로 가는 링크가 없습니다.
+- 결과 페이지에는 noindex/nofollow를 지정합니다. 이는 인증이 아닙니다.
+- 의도적으로 비밀번호 없이 주소만으로 접근합니다. /result 또는 /api/result를 아는 사람은 누구나 읽을 수 있습니다.
+- 제출 후 수정/삭제 API는 없으며 PATCH/PUT/DELETE 요청은 지원하지 않습니다.

@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const sql = getSql();
     const rows = await sql`
-      SELECT l.id, l.author_name AS name, l.body, l.paper_color AS color, l.created_at AS date
+      SELECT l.id, l.paper_color AS color, l.created_at AS date
       FROM letters l JOIN boards b ON b.id = l.board_id
       WHERE b.slug = ${boardSlug()}
       ORDER BY l.created_at DESC, l.id DESC
@@ -40,9 +40,9 @@ export async function POST(request: Request) {
       INSERT INTO letters (board_id, author_name, body, paper_color)
       SELECT id, ${name.trim()}, ${body.trim()}, ${color || 'cream'}
       FROM boards WHERE slug = ${boardSlug()} AND accepting_letters = true
-      RETURNING id, author_name AS name, body, paper_color AS color, created_at AS date
+      RETURNING id, paper_color AS color, created_at AS date
     `;
     if (!rows.length) return Response.json({error:'편지 작성이 마감되었거나 롤링페이퍼가 없어요.'}, {status:409});
-    return Response.json(rows[0], {status:201});
+    return Response.json(rows[0], {status:201,headers:{'Cache-Control':'no-store'}});
   } catch (error) { return databaseFailure(error, 'save'); }
 }
